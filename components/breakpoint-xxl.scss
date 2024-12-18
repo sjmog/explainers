@@ -1,26 +1,6 @@
-// Breakpoint sizes
-$breakpoints: (
-  'sm': 544px,
-  'md': 768px,
-  'lg': 1012px,
-  'xl': 1280px,
-  'xxl': 1400px
-);
-
-@mixin breakpoint($point) {
-  @if map-has-key($breakpoints, $point) {
-    @media (min-width: map-get($breakpoints, $point)) {
-      @content;
-    }
-  } @else if type-of($point) == number {
-    @media (min-width: $point) {
-      @content;
-    }
-  }
-}
-
 @mixin breakpoint-xxl {
-  @media (min-width: map-get($breakpoints, 'xxl')) {
-    @content;
+    @media (min-width: 1400px) {
+      @content;
+    }
   }
-}
+  
