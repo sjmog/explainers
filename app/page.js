@@ -1,46 +1,108 @@
-import fs from "fs";
-import path from "path";
-import { Box, Button } from '@primer/react'
-import Link from 'next/link';
+"use client";
 
-export default async function Home() {
-  const contentPath = path.join(process.cwd(), "content");
-  const files = fs.readdirSync(contentPath);
-  
-  const examples = files
-    .filter(file => file.endsWith('.md'))
-    .map(file => ({
-      id: file.replace('.md', ''),
-      name: file.replace('.md', '').split('-').join(' ') // Convert kebab-case to spaces
-    }));
+import React, { useState } from "react";
+import { Box, Button, FormControl } from "@primer/react";
+import { useRouter } from "next/navigation";
+import Editor from "react-simple-code-editor";
+import hljs from "highlight.js";
+import "highlight.js/styles/github.css";
+
+export default function NewExamplePage() {
+  const PLACEHOLDER_CODE = "Copy-paste code here";
+  const [code, setCode] = useState(PLACEHOLDER_CODE);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  function highlightCode(inputCode) {
+    return hljs.highlightAuto(inputCode).value;
+  }
+
+  function handleFocus() {
+    if (code === PLACEHOLDER_CODE) {
+      setCode("");
+    }
+  }
+
+  function handleValueChange(newCode) {
+    setCode(newCode);
+    setError("");
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (
+      !code ||
+      code.trim() === "" ||
+      code.trim() === PLACEHOLDER_CODE.trim()
+    ) {
+      setError("Please enter some code.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      router.push(`/${data.id}`);
+    } catch (err) {
+      setError(`Error: ${err}`);
+    }
+    setIsLoading(false);
+  };
 
   return (
-    <div className="d-lg-flex">
-      <div className="flex-column flex-1 min-width-0">
-        <main id="main-content" style={{ scrollMarginTop: "5rem" }}>
-          <Box p={4}>
-            <div className="d-flex flex-items-center mb-4">
-              <h1 className="flex-auto">Code Examples</h1>
-              <Link href="/new-example" className="no-underline">
-                <Button variant="primary">
-                  New Example
-                </Button>
-              </Link>
-            </div>
-            <ul className="list-style-none">
-              {examples.map((example) => (
-                <li key={example.id} className="mb-3">
-                  <Link 
-                    href={`/explainers/${example.id}`}
-                    className="Link--primary no-underline"
-                  >
-                    <h3 className="h4">{example.name}</h3>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Box>
-        </main>
+    <div className="w-full h-screen overflow-y-auto">
+      <div className="max-w-screen-md mx-auto flex flex-col items-center justify-center">
+        <Box p={4} className="w-full">
+          <h1 className="h2 text-center">Annotate your code</h1>
+          <p className="mb-6 text-center">
+            Enter your code below. We'll annotate it.
+          </p>
+          <form
+            onSubmit={handleSubmit}
+            className="d-flex flex-column items-center w-full"
+          >
+            <FormControl className="mb-3 w-full">
+              <FormControl.Label visuallyHidden>Code</FormControl.Label>
+              <Editor
+                value={code}
+                className="w-full min-h-[400px] rounded-md mb-4"
+                onFocus={handleFocus}
+                onBlur={code === "" ? () => setCode(PLACEHOLDER_CODE) : null}
+                onValueChange={handleValueChange}
+                highlight={highlightCode}
+                padding={10}
+                style={{
+                  backgroundColor: "#f6f8fa",
+                  fontFamily: '"Fira code", "Fira Mono", monospace',
+                }}
+              />
+            </FormControl>
+
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isLoading}
+              className="bg-indigo-600 font-semibold text-white/95 hover:bg-indigo-700 rounded-md inline-block w-72"
+            >
+              {isLoading ? "Annotating (takes 10-20 seconds)..." : "Annotate"}
+            </Button>
+          </form>
+
+          {error && (
+            <p className="text-center w-full bg-red-200 py-2 rounded-md shadow-sm font-semibold text-red-800 mt-4 whitespace-pre-wrap">
+              Error: {error}
+            </p>
+          )}
+        </Box>
       </div>
     </div>
   );
