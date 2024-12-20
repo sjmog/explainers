@@ -62,9 +62,9 @@ export default function NewExamplePage() {
     <div className="w-full h-screen overflow-y-auto">
       <div className="max-w-screen-md mx-auto flex flex-col items-center justify-center">
         <Box p={4} className="w-full">
-          <h1 className="h2 text-center">Annotate your code</h1>
+          <h1 className="h2 text-center">I'll explain your code</h1>
           <p className="mb-6 text-center">
-            Enter your code below. We'll annotate it.
+            Enter your code below. I'll annotate it.
           </p>
           <form
             onSubmit={handleSubmit}
